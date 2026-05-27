@@ -167,3 +167,11 @@ And a single JSON at `--results_file` containing per-experiment, per-sequence-me
 
 A SLAM sub-map needs at least **100 frame IDs in common** with the COLMAP reference to be considered (2–2.5 seconds at the EndoMapper 40–50 fps). Below that a map is too short to be metrically meaningful, and the threshold also prevents multi-map systems from gaming ATE with many tiny cherry-picked fragments. RPE at δ=40 additionally requires at least one common-ID pair separated by 40 frames — which any sub-map clearing the 100-frame threshold will satisfy in practice.
 
+---
+
+## License
+
+CLiMB is released under the [MIT License](LICENSE) — you may freely use, modify, and redistribute the evaluation code, toy example, submission instructions, and assets.
+
+**Exception:** the vendored [ORBSLAM/ORB-SLAM3/](ORBSLAM/ORB-SLAM3/) subtree is **not** covered by the MIT license. It is distributed under **GPLv3** by the original ORB-SLAM3 authors, with a separate commercial license available from the University of Zaragoza. See [ORBSLAM/ORB-SLAM3/LICENSE](ORBSLAM/ORB-SLAM3/LICENSE) for the governing terms. If you fork the ORB-SLAM3 baseline as the starting point for your own submission, your derived work inherits GPLv3 obligations for that part.
+
