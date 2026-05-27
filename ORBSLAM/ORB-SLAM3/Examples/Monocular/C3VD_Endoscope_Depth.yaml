@@ -1,0 +1,85 @@
+%YAML:1.0
+
+System:
+  # To C3VD, identifies the end of image file (register videos ".png" or screening videos "_color.png")
+  imageEndFile: ".png"
+  # To C3VD, dataset images has double images in a single one, it reduces its size by picking even rows and columns before of processing (it only afects to camera intrinsic parameters)
+  isC3VD: 0
+  # Set initial time of the sequence, in minutes and seconds ( >= 0 and < 60)
+  initialTimeSecond: 0
+  initialTimeMinute: 0
+
+  # Set finish time of the sequence, in minutes and seconds ( >= 0 and < 60)
+  # If end time is lower than initial time is ignored and the sequence is used until the end
+  finishTimeSecond: 0
+  finishTimeMinute: 0
+
+  # Set initial and end frame number of the sequence ( > 0)
+  # If end number is lower than initial number it is ignored and the sequence is used until the end
+  # If both sequence start points are defined (time and number) it uses number as default
+  initialNumberFrame: 0
+  finishNumberFrame: 0
+
+  # Activate or disactivate loop closing or merging algorithm (0: disactivate, 1: activate)
+  loopClosing: 0
+  merging: 1
+#--------------------------------------------------------------------------------------------
+# Camera Parameters.
+#--------------------------------------------------------------------------------------------
+Camera.type: "KannalaBrandt8"
+# Camera calibration and distortion parameters (OpenCV)
+Camera.fx: 767.1524453550137
+Camera.fy: 767.1577143790012
+Camera.cx: 679.5355907945006
+Camera.cy: 543.9812284482023
+# Distortion
+Camera.k1: -0.18045658
+Camera.k2: -0.02909262
+Camera.k3: 0.05003483
+Camera.k4: -0.013129
+Camera.width: 675
+Camera.height: 540
+
+Camera.imageScale: 1.0
+# Camera frames per second
+Camera.fps: 20
+# Number of frames avoided per frame, it reduces the amount of frames to speed up the system.
+Camera.numFramesAvoid: 0
+    
+# Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
+Camera.RGB: 1
+
+#--------------------------------------------------------------------------------------------
+# ORB Parameters
+#--------------------------------------------------------------------------------------------
+
+# ORB Extractor: Number of features per image
+ORBextractor.nFeatures: 4000
+
+# ORB Extractor: Scale factor between levels in the scale pyramid 	
+ORBextractor.scaleFactor: 1.2
+
+# ORB Extractor: Number of levels in the scale pyramid	
+ORBextractor.nLevels: 8
+
+# ORB Extractor: Fast threshold
+# Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
+# Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
+# You can lower these values if your images have low contrast			
+ORBextractor.iniThFAST: 20
+ORBextractor.minThFAST: 7
+
+#--------------------------------------------------------------------------------------------
+# Viewer Parameters
+#---------------------------------------------------------------------------------------------
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1.0
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize: 2.0
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3.0
+Viewer.TrajectoryLineWidth: 5.0
+Viewer.ViewpointX: 0.0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -1.8
+Viewer.ViewpointF: 500.0

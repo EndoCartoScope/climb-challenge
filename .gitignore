@@ -1,1 +1,52 @@
+# Python
 *.pyc
+__pycache__/
+*.egg-info/
+.venv/
+venv/
+
+# C/C++ build artifacts
+build/
+*.o
+*.a
+*.so
+*.so.*
+*.dylib
+*.dll
+
+# CMake (in case anything escapes a build/ dir)
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+
+# ORB-SLAM3: vocabulary ships as .tar.gz and is extracted at build time;
+# the extracted ORBvoc.txt is ~145 MB so we never want it tracked.
+ORBSLAM/ORB-SLAM3/Vocabulary/ORBvoc.txt
+ORBSLAM/ORB-SLAM3/lib/
+
+# Videos 
+data/
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.m4v
+
+# Submission and evaluation outputs 
+output/
+results.json
+*.ply
+*.zip
+
+# IDE / editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*~
+*.bak
+
+# Logs
+*.log

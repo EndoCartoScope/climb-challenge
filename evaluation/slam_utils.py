@@ -7,6 +7,14 @@ from colmap_utils import (list_colmap_maps_for_sequence, build_colmap_image_name
 from utils import qvec2rotmat
 
 
+# A SLAM sub-map is only considered for evaluation if it overlaps the COLMAP
+# reference by at least this many image IDs. At the EndoMapper short-sequence
+# frame rate (40-50 fps), 100 frames is 2-2.5 seconds of video — below that
+# a map is too short to be metrically meaningful, and a multi-map system that
+# emits many tiny maps would otherwise game ATE with cherry-picked fragments.
+MIN_COMMON_FRAMES = 100
+
+
 def parse_endomapper_args():
     parser = argparse.ArgumentParser(
         description="Evaluation and visualization of COLMAP vs SLAM on endomapper sequences."
@@ -245,8 +253,9 @@ def match_with_slam_maps(slam_maps, ref_ids_set, use_timestamp=False):
             # print(f"[INFO] SLAM map id {map_id} has={slam_map}")
             sm_set = build_image_name_set(slam_map["traj_file"], use_timestamp=use_timestamp)
 
-            # Match if there is at least three common image ID
-            if len(ref_ids_set.intersection(sm_set)) > 3:
+            # Drop sub-maps that overlap the COLMAP reference by fewer than
+            # MIN_COMMON_FRAMES image IDs — those are too short to be meaningful.
+            if len(ref_ids_set.intersection(sm_set)) >= MIN_COMMON_FRAMES:
                 matched_slam_maps[map_id] = slam_map
 
         if matched_slam_maps:
