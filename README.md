@@ -108,7 +108,9 @@ See [toy-example/run.py](toy-example/run.py) for the simplest possible writer of
 
 ### `ORBSLAM/`: ORB-SLAM3 baseline
 
-The reference SLAM baseline. Use it as a starting point to wrap your own SLAM system in a submission image. The ORB-SLAM3 source is vendored at [ORBSLAM/ORB-SLAM3/](ORBSLAM/ORB-SLAM3/) and baked into the image at build time.
+A reference classical-SLAM baseline. ORB-SLAM3 is a weak baseline on colonoscopy, so its main value here is as a worked example of how to wrap a real C++ SLAM system into a CLiMB-compliant submission image. The source is vendored at [ORBSLAM/ORB-SLAM3/](ORBSLAM/ORB-SLAM3/), baked into the image at build time, and driven by an entrypoint that produces the full 5-runs-per-sequence output tree.
+
+**Learning-based methods are explicitly welcomed.** If you're building a deep / hybrid pipeline rather than a classical SLAM, the **ALIKED + LightGlue** pose-estimation baseline from [imed-challenge/imedpe](https://github.com/imed-challenge/imedpe) is the better reference to follow, it shows how to wrap a learned feature-matching frontend into a Docker submission of the same shape we expect here with very little adjustments.
 
 ```bash
 bash ORBSLAM/docker-run.sh
