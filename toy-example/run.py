@@ -107,10 +107,11 @@ def write_run_output(output_dir: Path, sequence: str, run_id: int, num_frames: i
     #     ranking metric (processing_seconds / N_frames).
     t_processing_start = time.perf_counter()
 
-    for frame_id in range(num_frames):
-        timestamp = float(frame_id)
+    for index in range(num_frames):
+        frame_id = index + 1  # frame IDs are 1-based: the first frame must be ID 1
+        timestamp = float(index)
         image_name = f"{frame_id:06d}.png"
-        tx = frame_id * translation_step
+        tx = index * translation_step
         ty = 0.0
         tz = 0.0
         qw, qx, qy, qz = 1.0, 0.0, 0.0, 0.0

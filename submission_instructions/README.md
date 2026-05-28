@@ -65,6 +65,7 @@ Beyond the example layouts in the [top-level README](../README.md#trajectory-fil
 
 - **Map folder names**: the folder under `3D_maps/` must be an integer. Zero-padding is optional — `0`, `00`, and `000` are all accepted and treated as the same map id. The corresponding trajectory file, however, **must be zero-padded to 3 digits** (`cam_traj_map_000.txt`).
 - **Trajectory columns**: the first 9 comma-separated fields (`timestamp, name_image, tx, ty, tz, qw, qx, qy, qz`) are required and must be in that order. 
+- **Frame numbering**: frame IDs (the numeric prefix of `name_image`) are **1-based** — the first frame of every sequence is frame ID `1` (`000001.png`), not `0`. This must hold for every method so IDs line up with the COLMAP reference.
 - `**points3D.txt` headers**: any line starting with `#` is treated as a comment. Multi-line COLMAP-style headers, single-line headers, or no headers at all are all fine.
 
 #### Runtime reporting (`runtime.txt`)

@@ -33,12 +33,12 @@ X_w = R_wc · X_c + C_w,    with R_wc = qvec2rotmat(qw, qx, qy, qz)
 
 ```
 # timestamp, name_image, tx, ty, tz, qw, qx, qy, qz
-0.000000,000000.png,0.000000,0.000000,0.000000,1.0,0.0,0.0,0.0
-0.033367,000001.png,0.001000,0.000000,0.000000,1.0,0.0,0.0,0.0
+0.000000,000001.png,0.000000,0.000000,0.000000,1.0,0.0,0.0,0.0
+0.033367,000002.png,0.001000,0.000000,0.000000,1.0,0.0,0.0,0.0
 ...
 ```
 
-The matching key between SLAM and the COLMAP reference is the **numeric prefix** of `name_image` (e.g. `000042.png` → frame ID `42`). Make sure your numbering matches the input frame index of the video.
+The matching key between SLAM and the COLMAP reference is the **numeric prefix** of `name_image` (e.g. `000042.png` → frame ID `42`). Frame IDs are **1-based**: the first frame of every sequence is frame ID `1` (`000001.png`), not `0`. Make sure your numbering matches the input frame index of the video.
 
 The first 9 fields above are required and must be in that order. **Additional trailing columns are ignored** by the evaluator, so it is safe to emit method-specific extras (the ORB-SLAM3 baseline, for example, appends `frame_state, track_state, dataset_id, merged_frame_id`).
 
