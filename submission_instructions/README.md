@@ -228,4 +228,25 @@ docker run --rm --gpus all --network=none --memory=64g \
   my-submission
 ```
 
-If that command produces a tree that matches [Output layout](#output-layout), you're done. Run `python evaluation/slam_evaluation.py --colmap_path ... --slam_path $(pwd)/output --results_file results.json` to confirm the evaluator can score it before pushing.
+Then check the produced tree against the contract with the self-check tool (no
+dependencies, same checks the Validation queue runs):
+
+```bash
+python evaluation/validate_submission.py --output $(pwd)/output --input $(pwd)/data
+```
+
+If it prints `VALID`, your submission will not be rejected for format reasons.
+
+As an **additional check**, you can run the metric evaluator itself on the sample
+sequences, their COLMAP reconstructions are provided with the challenge samples data, so the
+full pipeline (alignment + ATE/RPE/TFR) runs end-to-end on your side:
+
+```bash
+python evaluation/slam_evaluation.py \
+    --colmap_path /path/to/sample_colmaps \
+    --slam_path   $(pwd)/output \
+    --results_file results.json
+```
+
+This confirms your trajectories match frame IDs with the COLMAP reference and produce
+sane metrics before you submit. The test-set ground truth itself remains private.
