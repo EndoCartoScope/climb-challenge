@@ -8,6 +8,18 @@ import csv
 from pathlib import Path
 
 
+# When False, draw_in_files_ply() is a no-op so the evaluator skips writing the
+# (large) visualization PLYs. Metrics do not depend on them. Toggle via
+# set_save_ply(); default True preserves standalone behaviour unless a caller
+# opts out (e.g. slam_evaluation.py without --save_ply).
+_SAVE_PLY = True
+
+
+def set_save_ply(enabled: bool) -> None:
+    global _SAVE_PLY
+    _SAVE_PLY = bool(enabled)
+
+
 def qvec2rotmat(qvec):
     """
         Convert a quaternion into a 3×3 rotation matrix, following the
@@ -505,7 +517,7 @@ def lineset_to_cylinders(lineset, radius=0.02, color=None):
 
 
 def get_file_num_frames_per_video(folder_path: str,
-                                  file_name: str ="endomapper_short_seq_frames.csv"):
+                                  file_name: str ="climb_seq_frames.csv"):
     basic_path = os.path.abspath(folder_path)
     file_path = os.path.join(basic_path, file_name)
     if os.path.exists(file_path) and  os.path.isfile(file_path):
@@ -667,6 +679,8 @@ def draw_in_files_ply(rot_wc, center_wc, ids, points_3D=None, points_color=None,
                       out_dir=None, traj_color=None, pyramid_color=None,
                       traj_filename=None, pyramid_filename=None, cam_axis_filename=None,
                       points_filename=None):
+    if not _SAVE_PLY:
+        return
     if out_dir is None:
         print(f"out_dir cannot be None")
         return

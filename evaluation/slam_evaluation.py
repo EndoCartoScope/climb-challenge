@@ -43,7 +43,8 @@ if __name__ == '__main__':
         verbose=args.verbose,
         file_num_frames=num_frames_per_video_file,
         file_scales=sequence_scales_file,
-        file_traj_lengths=trajectory_lengths_file
+        file_traj_lengths=trajectory_lengths_file,
+        save_ply=args.save_ply
     )
 
     save_results_json(

@@ -122,7 +122,7 @@ The image bundles Pangolin + ORB-SLAM3, runs `mono_endo_hculb` 5 times on each v
 
 ## Evaluation
 
-[`evaluation/slam_evaluation.py`](evaluation/slam_evaluation.py) aligns each SLAM trajectory against a COLMAP reference via a closed-form Sim(3) (Horn) and reports **ATE** and **RPE** metrics, plus PLY files for visual inspection in MeshLab / Open3D.
+[`evaluation/slam_evaluation.py`](evaluation/slam_evaluation.py) aligns each SLAM trajectory against a COLMAP reference via a closed-form Sim(3) (Horn) and reports **ATE** and **RPE** metrics. Optionally (`--save_ply`) it also writes PLY files for visual inspection in MeshLab / Open3D.
 
 ```bash
 python evaluation/slam_evaluation.py \
@@ -141,14 +141,16 @@ python evaluation/slam_evaluation.py \
   <seq>/results_txt/{images.txt, points3D.txt}
   scales.csv                       # per-sequence mm scale
   traj_lengths_mm.csv              # per-sequence trajectory length
-  endomapper_short_seq_frames.csv  # total frames per video
+  climb_seq_frames.csv             # frames and fps per video
 ```
 
 `--slam_path`: the submission tree described in [Submission layout](#submission-layout). Sequence folder names must match between the two trees.
 
 ### Output
 
-For each SLAM map, the evaluator writes into `<seq>/<run_id>/3D_maps/<map_id>/`:
+The main output is a single JSON at `--results_file` containing **per-experiment, per-sequence-mean, and global-mean metrics** — this is what the challenge scoring consumes.
+
+With `--save_ply` (off by default — the files are large and metrics do not depend on them), the evaluator additionally writes into `<seq>/<run_id>/3D_maps/<map_id>/`:
 
 | File | Content |
 |---|---|
@@ -156,8 +158,6 @@ For each SLAM map, the evaluator writes into `<seq>/<run_id>/3D_maps/<map_id>/`:
 | `slam_trajectory.ply`, `slam_points.ply`, `slam_pyramid.ply` | Sim(3)-aligned SLAM trajectory and map |
 | `slam_original_*.ply` | SLAM in its native frame (pre-alignment) |
 | `line_error.ply` | Red cylinders connecting each matched COLMAP / SLAM pose pair |
-
-And a single JSON at `--results_file` containing per-experiment, per-sequence-mean, and global-mean metrics.
 
 ### Metrics
 
@@ -168,6 +168,36 @@ And a single JSON at `--results_file` containing per-experiment, per-sequence-me
 - **Success**: `✓` if `TFR > 50%`, else `✗`.
 
 A SLAM sub-map needs at least **100 frame IDs in common** with the COLMAP reference to be considered (2–2.5 seconds at the EndoMapper 40–50 fps). Below that a map is too short to be metrically meaningful, and the threshold also prevents multi-map systems from gaming ATE with many tiny cherry-picked fragments. RPE at δ=40 additionally requires at least one common-ID pair separated by 40 frames — which any sub-map clearing the 100-frame threshold will satisfy in practice.
+
+### Final score and ranking
+
+The leaderboard is ranked by a single **final score** (lower is better): the lowest
+average ATE over all test clips, weighted by tracking coverage and runtime. For each
+test clip:
+
+```
+Score_ATE = ATE × W_rtf × W_t
+
+W_rtf = 1 + 0.5 × (1 − RTF)                      # tracking-coverage weight
+W_t   = 1 + 0.5 × min(1, max(0, T × fps − 1))    # runtime weight
+```
+
+- `ATE` — mean ATE of the clip (mm), averaged over the 5 runs.
+- `RTF` — tracked-frame ratio (TFR as a fraction in [0, 1]).
+- `T` — per-frame processing time (s/frame, from `runtime.txt`); `fps` is the video
+  frame rate. A method running at or faster than real time gets `W_t = 1`; one at half
+  real-time speed or slower gets the full ×1.5 penalty.
+
+The **final score is the average of `Score_ATE` across all test clips**.
+
+**Missing or failed clips are penalized, not skipped**: any clip with missing/invalid
+output, no valid map, or `TFR ≤ 50%` enters the average with `RTF = 0`,
+`ATE = 25 mm`, `RotErr = 20°`, and `W_t = 1.5` — an incomplete submission scores
+strictly worse than a complete one.
+
+**Tie-break**: methods whose final score differs by ≤ 5 % (relative) are ordered by the
+analogous weighted rotation score `Score_Rot = RotErr × W_rtf × W_t`, where `RotErr` is
+the rotational RPE at δ=40 (lower is better).
 
 ---
 

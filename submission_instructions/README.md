@@ -59,6 +59,8 @@ Flat directory of `.mp4` files. Sequence name = video filename without extension
 
 A method that produces multiple sub-maps per sequence should write one folder per `<map_id>` under `3D_maps/`, with a matching `cam_traj_map_<map_id:03d>.txt` in `camera_trajectory/`.
 
+If your method produces a **single map** per sequence, you still use this same structure with `map_id = 0`: the map goes in `3D_maps/0/points3D.txt` and its trajectory in `camera_trajectory/cam_traj_map_000.txt`.
+
 #### File format notes
 
 Beyond the example layouts in the [top-level README](../README.md#trajectory-file-format), the evaluator is intentionally tolerant in a few places. These are guarantees, not just current behaviour:
@@ -94,7 +96,7 @@ A missing or unparseable `runtime.txt` is treated as a failed run under the [Mis
 | RAM        | 64 GB                                                                                             |
 | Network    | available at **build** time (for `apt`, `pip`, `git clone`); `**--network=none`** at **run** time |
 | Filesystem | read-only `/input`, writable `/output`. Nothing else persists.                                    |
-| Wall-clock | to be confirmed — currently unbounded                                                             |
+| Wall-clock | **5× the real-time duration of the job** (all sequences × 5 runs). For the current test set this is ≈ 6 h per scoring submission. Exceeding it aborts the run → `INVALID` (`timeout`). |
 
 
 Because the container runs with `--network=none`, **bake all weights, model files, vocabularies, and any other downloaded assets into the image at build time**. Any runtime download attempt will fail.
@@ -103,7 +105,110 @@ The formal timing contract is the per-run `runtime.txt` artifact described in [R
 
 ## Submission
 
-**TBD**. Full instructions for tagging, pushing, and submitting the Docker image to the CLiMB Synapse evaluation queue will be published here once the queue is live.
+Submissions are delivered as **Docker images** pushed to the CLiMB Synapse Docker
+registry and submitted through **two evaluation queues**:
+
+| Queue | Purpose | What it runs | Result |
+|---|---|---|---|
+| **CLiMB Validation** | Fast smoke test | Your image on **one short clip**, then a format check of the output tree | `VALIDATED` or `INVALID` (+ reason) |
+| **CLiMB Scoring** | Official evaluation | Your image on the **full test set** (all sequences × 5 runs), then metrics | `SCORED` (+ ATE/RPE/TFR/Runtime) or `INVALID` (+ reason) |
+
+> Submission opens **July 15, 2026**. Until then the queues are closed to
+> participants.
+
+### 0. Register for the challenge
+
+Before anything else, complete the registration steps on the
+[challenge wiki](https://www.synapse.org/Synapse:syn74370700/wiki/639980) (Synapse
+account, challenge registration / participant team, and Synapse **certified user**
+status — required to create projects and push Docker images). Without these, the
+steps below will fail with permission errors.
+
+### 1. Push your image to your own project's registry
+
+Docker images are pushed to the registry of **your own Synapse project** (create one
+from your Synapse home page if you don't have one — it can stay private). You do
+**not** push to the CLiMB project; you only *submit* the image entity to our queues.
+
+```bash
+# Tag for YOUR project's registry: docker.synapse.org/<your_project_synID>/<method>:<tag>
+docker tag my-submission:dev docker.synapse.org/syn<YOUR_PROJECT_ID>/my-method:v1
+
+# Log in (password = a Synapse Personal Access Token, NOT your account password)
+docker login docker.synapse.org
+
+# Push
+docker push docker.synapse.org/syn<YOUR_PROJECT_ID>/my-method:v1
+```
+
+After the push, the image appears under the **Docker** tab of your project as an
+entity — that entity is what you submit. Tag each new submission with a fresh version
+(`v1`, `v2`, …) so previous submissions stay reproducible. Do not overwrite a tag that
+has already been evaluated.
+
+### 2. Submit to **Validation** first
+
+Always submit to the **CLiMB Validation** queue first. In the Synapse web UI: open your
+Docker image entity → **Submit to Challenge** → choose the **CLiMB Validation** queue.
+The validation runner executes your image on a single short clip and checks that the
+output tree matches [Output layout](#output-layout): 5 run folders, integer map folders
+with matching zero-padded `cam_traj_map_<id:03d>.txt`, 1-based frame IDs, and a
+parseable `runtime.txt`.
+
+- **`VALIDATED`** — the format is correct; you're clear to submit to scoring.
+- **`INVALID`** — see the `error_message` annotation on your submission for the exact
+  problem (e.g. `Seq_001_a: missing run folder 3/`, or a container crash / timeout), fix
+  it, push a new version, and re-validate.
+
+Validation runs your container on a tiny input, so it catches contract mistakes in
+minutes instead of burning a multi-hour scoring slot.
+
+### 3. Once `VALIDATED`, submit the same image to **Scoring**
+
+When your submission reaches `VALIDATED`, submit the **same image** to the
+**CLiMB Scoring** queue. The scoring runner executes your container on the full test
+set (all sequences × 5 runs) on the reference RTX 5090 and evaluates it.
+
+- **`SCORED`** — metrics are attached as annotations (mean ATE mm, RPE rotational deg at
+  δ=40, TFR %, Runtime s/frame, success count) and appear on the leaderboard, ranked by
+  the final **`climb_score`** — see [Final score and ranking](../README.md#final-score-and-ranking)
+  for the exact formula.
+- **`INVALID`** — the `error_message` annotation explains what failed (pull error,
+  container crash, wall-clock timeout, malformed output, or a scoring error).
+
+> Tip: set a **submission alias** in the submit form — it is shown on the leaderboard
+> next to your team name and helps you tell your own attempts apart.
+
+### Where you see the result
+
+The outcome shows up as the **submission status + annotations** on your submission in the
+Synapse UI, and `SCORED` metrics on the challenge leaderboard. (The evaluator does **not**
+email you — check your submission in the web UI.)
+
+### Please include a short method description
+
+Along with **each** submission (Synapse submission form or accompanying text):
+
+- Method name and a one-line description.
+- Approximate per-sequence wall-clock on the EndoMapper short sequences from your local runs.
+
+### Final submission: method write-up (mandatory for the ranking)
+
+For your **final** submission, a short **method write-up (max 3 pages, excluding
+references)** is required, submissions without it do not qualify for the official
+leaderboard. It must cover:
+
+- Title, authors, affiliations, team name, and whether you agree to make the write-up
+  public (only teams that agree appear as co-authors on the challenge summary
+  publication).
+- **Background**: motivation and novelty of the approach.
+- **Methods**: description detailed enough to be reproducible: pipeline diagram,
+  pre-processing, training details, GPU resources used.
+- **Data disclosure**: any pre-trained models and public data used for training.
+  EndoMapper is public: using the **test sequences (or reconstructions of them)** for
+  training or tuning is **not allowed** and must be explicitly ruled out here.
+- **Discussion**: strengths/weaknesses, expected failure cases.
+- Citations and, if available, a link to your source code (encouraged).
 
 ## Local testing
 

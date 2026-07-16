@@ -50,3 +50,7 @@ Thumbs.db
 
 # Logs
 *.log
+
+#private
+orchestrator/
+submission_instructions/TODO.md

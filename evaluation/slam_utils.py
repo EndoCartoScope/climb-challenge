@@ -42,6 +42,12 @@ def parse_endomapper_args():
         default=None,
         help="Optional path to save evaluation results as JSON."
     )
+    parser.add_argument(
+        "--save_ply",
+        action="store_true",
+        help="Also write the (large) visualization PLYs per map/run. "
+             "Off by default; metrics do not depend on them. Use for debugging."
+    )
 
     args = parser.parse_args()
 

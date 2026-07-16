@@ -8,7 +8,8 @@ from evaluate_ate_scale import build_correspondence_matrices, align
 from colmap_utils import read_colmap_data, read_colmap_data_as_slam
 from slam_utils import read_slam_data, match_colmap_slam_maps_by_images
 from utils import (load_video_frame_counts, load_sequence_scales, load_sequence_trajectory_lengths,
-                   compute_rpe_metrics, draw_in_files_ply, merge_triangle_meshes, compute_pose_pair_errors)
+                   compute_rpe_metrics, draw_in_files_ply, merge_triangle_meshes, compute_pose_pair_errors,
+                   set_save_ply)
 
 
 def match_sequences_by_folder(gt_list, slam_list):
@@ -351,7 +352,7 @@ def get_num_points(points_3D):
 
 def match_and_align_sequences(ref_seqs, slam_seqs, ref_type, slam_type, verbose: bool = False,
                               file_num_frames: str = None, file_scales: str = None,
-                              file_traj_lengths: str = None):
+                              file_traj_lengths: str = None, save_ply: bool = False):
     """
     Matches REF (GT) and SLAM sequences, aligns their corresponding maps,
     computes pose metrics (ATE, RPE), and exports aligned results as PLY files.
@@ -376,6 +377,9 @@ def match_and_align_sequences(ref_seqs, slam_seqs, ref_type, slam_type, verbose:
     def vprint(*args, **kwargs):
         if verbose:
             print(*args, **kwargs)
+
+    # Gate all visualization-PLY writing (large; not needed for metrics).
+    set_save_ply(save_ply)
 
     all_results = {}
     all_results_mean = {}
@@ -560,15 +564,16 @@ def match_and_align_sequences(ref_seqs, slam_seqs, ref_type, slam_type, verbose:
                                       traj_filename="slam_trajectory_matched.ply",
                                       traj_color=[0, 1, 0])
 
-                    # -- Line error cylinders --
-                    (common_ids_err, trans_errors, rot_errors_deg, line_errors) = compute_pose_pair_errors(
-                        ref_rot_wc, ref_center_wc, ref_ids,
-                        slam_image_rotations_aligned_wc, slam_image_poses_aligned_wc, slam_image_ids,
-                        color=[1, 0, 0], radius=0.05)
-                    if common_ids_err is not None:
-                        line_error_merged = merge_triangle_meshes(line_errors)
-                        line_error_out_file = os.path.join(out_dir, "line_error.ply")
-                        o3d.io.write_triangle_mesh(line_error_out_file, line_error_merged)
+                    # -- Line error cylinders (visualization only) --
+                    if save_ply:
+                        (common_ids_err, trans_errors, rot_errors_deg, line_errors) = compute_pose_pair_errors(
+                            ref_rot_wc, ref_center_wc, ref_ids,
+                            slam_image_rotations_aligned_wc, slam_image_poses_aligned_wc, slam_image_ids,
+                            color=[1, 0, 0], radius=0.05)
+                        if common_ids_err is not None:
+                            line_error_merged = merge_triangle_meshes(line_errors)
+                            line_error_out_file = os.path.join(out_dir, "line_error.ply")
+                            o3d.io.write_triangle_mesh(line_error_out_file, line_error_merged)
 
                     results_map[slam_map_id] = build_result_record(
                         exp_name=slam_exp_name,
