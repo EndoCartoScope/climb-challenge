@@ -1,6 +1,6 @@
 # CLiMB Submission Instructions
 
-This document is the authoritative contract for submissions to the CLiMB challenge. If anything in the [top-level README](../README.md) appears to contradict what's here, this file wins.
+This document is the authoritative contract for submissions to the CLiMB challenge. 
 
 ## What you submit
 
