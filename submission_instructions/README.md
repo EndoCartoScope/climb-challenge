@@ -210,6 +210,11 @@ leaderboard. It must cover:
 - **Discussion**: strengths/weaknesses, expected failure cases.
 - Citations and, if available, a link to your source code (encouraged).
 
+**How to deliver it:** send the write-up as a **PDF by email** to
+**endocartoscope@unizar.es** with the subject `[CLiMB 2026] Write-up <TeamName>`,
+by **September 12, 2026, 23:59 AoE**. In the email, state the **Synapse submission ID**
+of your team's entry that the write-up describes.
+
 ## Local testing
 
 Two reference implementations live in the repo and follow this exact contract:
