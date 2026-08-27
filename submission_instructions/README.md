@@ -199,8 +199,8 @@ references)** is required, submissions without it do not qualify for the officia
 leaderboard. It must cover:
 
 - Title, authors, affiliations, team name, and whether you agree to make the write-up
-  public (only teams that agree appear as co-authors on the challenge summary
-  publication).
+  public (co-authorship on the joint challenge publication follows the Publication
+  Policy on the challenge wiki).
 - **Background**: motivation and novelty of the approach.
 - **Methods**: description detailed enough to be reproducible: pipeline diagram,
   pre-processing, training details, GPU resources used.
