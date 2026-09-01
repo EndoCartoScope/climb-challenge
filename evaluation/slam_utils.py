@@ -9,10 +9,10 @@ from utils import qvec2rotmat
 
 # A SLAM sub-map is only considered for evaluation if it overlaps the COLMAP
 # reference by at least this many image IDs. At the EndoMapper short-sequence
-# frame rate (40-50 fps), 100 frames is 2-2.5 seconds of video — below that
+# frame rate (50 fps), 250 frames is 5 seconds of video — below that
 # a map is too short to be metrically meaningful, and a multi-map system that
 # emits many tiny maps would otherwise game ATE with cherry-picked fragments.
-MIN_COMMON_FRAMES = 100
+MIN_COMMON_FRAMES = 250
 
 
 def parse_endomapper_args():

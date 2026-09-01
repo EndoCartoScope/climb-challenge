@@ -6,7 +6,8 @@ from collections import defaultdict
 
 from evaluate_ate_scale import build_correspondence_matrices, align
 from colmap_utils import read_colmap_data, read_colmap_data_as_slam
-from slam_utils import read_slam_data, match_colmap_slam_maps_by_images
+from slam_utils import (read_slam_data, match_colmap_slam_maps_by_images,
+                        MIN_COMMON_FRAMES)
 from utils import (load_video_frame_counts, load_sequence_scales, load_sequence_trajectory_lengths,
                    compute_rpe_metrics, draw_in_files_ply, merge_triangle_meshes, compute_pose_pair_errors,
                    set_save_ply)
@@ -31,7 +32,8 @@ def match_sequences_by_folder(gt_list, slam_list):
     return matched_gt, matched_slam
 
 
-def build_result_record(exp_name, map_id, align_results, seq_data, result_rpe):
+def build_result_record(exp_name, map_id, align_results, seq_data, result_rpe,
+                        frames_dropped_overlap=0):
     ratio_loc_frames = -1.0
     ref_ratio_loc_frames = -1.0
 
@@ -50,6 +52,7 @@ def build_result_record(exp_name, map_id, align_results, seq_data, result_rpe):
         "ratio_loc_frames": ratio_loc_frames * 100.0,
         "num_points": align_results['num_points'],
         "num_matched_poses": align_results['num_matched_poses'],
+        "frames_dropped_overlap": int(frames_dropped_overlap), # frames excluded because an earlier sub-map already claimed them
         "ref_images": seq_data['ref_num_images'],
         "ref_points": seq_data['ref_num_points'],
         "ref_ratio_loc_frames": ref_ratio_loc_frames * 100.0,
@@ -73,6 +76,7 @@ def get_pondered_maps_result(results_map):
     if len(results_map) == 1:
         only_result = copy.deepcopy(next(iter(results_map.values())))
         only_result["num_maps"] = 1
+        only_result["per_map"] = copy.deepcopy(results_map)
         return only_result
 
     num_maps = len(results_map)
@@ -93,7 +97,7 @@ def get_pondered_maps_result(results_map):
 
     sum_keys = [
         "ratio_loc_frames", "num_frames", "num_kfs",
-        "num_points", "num_matched_poses",
+        "num_points", "num_matched_poses", "frames_dropped_overlap",
     ]
 
     out = {"num_maps": num_maps}
@@ -107,6 +111,7 @@ def get_pondered_maps_result(results_map):
     out["ref_images"] = maps[-1]["ref_images"]
     out["ref_points"] = maps[-1]["ref_points"]
     out["ref_ratio_loc_frames"] = float(maps[-1]["ref_ratio_loc_frames"])
+    out["per_map"] = copy.deepcopy(results_map)
 
     return out
 
@@ -148,6 +153,7 @@ def get_mean_seq_result(results, dict_seq_traj_lengths, seq_name, num_valid_exp=
         "num_kfs": round(np.mean(agg["num_kfs"])),
         "num_points": round(np.mean(agg["num_points"])),
         "num_matched_poses": round(np.mean(agg["num_matched_poses"])),
+        "frames_dropped_overlap": round(np.mean(agg["frames_dropped_overlap"])),
 
         "ref_images": round(np.mean(agg["ref_images"])),
         "ref_points": round(np.mean(agg["ref_points"])),
@@ -459,7 +465,14 @@ def match_and_align_sequences(ref_seqs, slam_seqs, ref_type, slam_type, verbose:
             results_exp = {}
             for slam_exp_name, slam_map in slam_matched_maps.items():
                 results_map = {}
-                for slam_map_id, slam_map_dicts in slam_map.items():
+                # Sub-maps are evaluated as DISJOINT sets of frames: maps are
+                # visited in ascending map_id order and every frame already
+                # claimed by an earlier map is excluded from the later one
+                # (both from its Sim(3) alignment and from its metrics), so a
+                # reference frame is never counted twice.
+                used_ids = set()
+                for slam_map_id, slam_map_dicts in sorted(
+                        slam_map.items(), key=lambda kv: int(kv[0])):
                     vprint("-" * 15)
                     vprint(f"SLAM map: {slam_map_id}")
 
@@ -469,10 +482,45 @@ def match_and_align_sequences(ref_seqs, slam_seqs, ref_type, slam_type, verbose:
                      slam_points_3D_array, slam_points_color_array,
                      out_dir) = reader_slam_fn(slam_map_dicts, verbose)
 
+                    # -- Drop frames already claimed by a previous sub-map --
+                    n_before = len(slam_traj_ids)
+                    if used_ids:
+                        keep = np.array([int(i) not in used_ids for i in slam_traj_ids],
+                                        dtype=bool)
+                        slam_traj_pose_wc = slam_traj_pose_wc[keep]
+                        slam_traj_rot_wc = slam_traj_rot_wc[keep]
+                        slam_traj_ids = np.asarray(slam_traj_ids)[keep]
+                        keep_kf = np.array([int(i) not in used_ids for i in slam_image_ids],
+                                           dtype=bool)
+                        slam_image_poses_wc = slam_image_poses_wc[keep_kf]
+                        slam_image_rotations_wc = slam_image_rotations_wc[keep_kf]
+                        slam_image_ids = np.asarray(slam_image_ids)[keep_kf]
+                        slam_image_names = [n for n, k in zip(slam_image_names, keep_kf) if k]
+                    n_dropped_overlap = n_before - len(slam_traj_ids)
+                    if n_dropped_overlap:
+                        vprint(f"Overlap with previous sub-maps: {n_dropped_overlap} "
+                               f"frame(s) excluded from map {slam_map_id}")
+                    if len(slam_traj_ids) == 0:
+                        vprint(f"Map {slam_map_id} fully contained in previous maps, skipped")
+                        continue
+
                     vprint(f"SLAM exp name: {slam_exp_name}")
                     vprint(f"SLAM frames: {len(slam_traj_pose_wc)}")
                     vprint(f"SLAM keyframes: {len(slam_image_poses_wc)}")
                     vprint(f"SLAM points: {len(slam_points_3D_array)}")
+
+                    # The >=MIN_COMMON_FRAMES rule is enforced on what the map
+                    # actually owns, i.e. AFTER removing overlapping frames.
+                    # Checked BEFORE building the correspondences, because
+                    # build_correspondence_matrices() raises when fewer than 3
+                    # IDs match -- which dedup can easily produce.
+                    n_common = len(set(int(i) for i in slam_traj_ids) &
+                                   set(int(i) for i in ref_ids))
+                    if n_common < MIN_COMMON_FRAMES:
+                        vprint(f"Map {slam_map_id} keeps only {n_common} exclusive "
+                               f"frame(s) matching the reference (< {MIN_COMMON_FRAMES}), skipped")
+                        continue
+                    used_ids.update(int(i) for i in slam_traj_ids)
 
                     model, data, common_ids = build_correspondence_matrices(
                         slam_traj_pose_wc, slam_traj_ids,
@@ -581,6 +629,7 @@ def match_and_align_sequences(ref_seqs, slam_seqs, ref_type, slam_type, verbose:
                         align_results=align_results,
                         seq_data=seq_data,
                         result_rpe=result_rpe,
+                        frames_dropped_overlap=n_dropped_overlap,
                     )
 
                 if results_map:
