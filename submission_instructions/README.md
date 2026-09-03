@@ -113,8 +113,15 @@ registry and submitted through **two evaluation queues**:
 | **CLiMB Validation** | Fast smoke test | Your image on **one short clip**, then a format check of the output tree | `VALIDATED` or `INVALID` (+ reason) |
 | **CLiMB Scoring** | Official evaluation | Your image on the **full test set** (all sequences × 5 runs), then metrics | `SCORED` (+ ATE/RPE/TFR/Runtime) or `INVALID` (+ reason) |
 
-> Submission opens **July 15, 2026**. Until then the queues are closed to
-> participants.
+#### Key dates
+
+| Date (23:59 AoE) | Deadline |
+|---|---|
+| **September 7, 2026** | Registration: participants, teams and signed rules |
+| **September 10, 2026** | Docker submission to the Scoring queue |
+| **September 12, 2026** | Method write-up (PDF by email) |
+
+Full timeline on the [challenge wiki](https://www.synapse.org/Synapse:syn74370700/wiki/639986).
 
 ### 0. Register for the challenge
 
@@ -198,9 +205,9 @@ For your **final** submission, a short **method write-up (max 3 pages, excluding
 references)** is required, submissions without it do not qualify for the official
 leaderboard. It must cover:
 
-- Title, authors, affiliations, team name, and whether you agree to make the write-up
-  public (co-authorship on the joint challenge publication follows the Publication
-  Policy on the challenge wiki).
+- Title, authors, affiliations and team name. The author list is also your team's proposed
+  co-author list for the joint challenge publication (see the Publication Policy on the
+  challenge wiki).
 - **Background**: motivation and novelty of the approach.
 - **Methods**: description detailed enough to be reproducible: pipeline diagram,
   pre-processing, training details, GPU resources used.
