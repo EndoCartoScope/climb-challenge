@@ -167,7 +167,7 @@ With `--save_ply` (off by default — the files are large and metrics do not dep
 - **Runtime** (s/frame): per-run `processing_seconds / N`, read from each run's [`runtime.txt`](submission_instructions/README.md#runtime-reporting-runtimetxt). `N` is the number of processed frames in the run's trajectory; `init_seconds` (model/vocabulary load, GPU warmup, video open) is recorded for audit but excluded from scoring.
 - **Success**: `✓` if `TFR > 50%`, else `✗`.
 
-A SLAM sub-map needs at least **100 frame IDs in common** with the COLMAP reference to be considered (2–2.5 seconds at the EndoMapper 40–50 fps). Below that a map is too short to be metrically meaningful, and the threshold also prevents multi-map systems from gaming ATE with many tiny cherry-picked fragments. RPE at δ=40 additionally requires at least one common-ID pair separated by 40 frames — which any sub-map clearing the 100-frame threshold will satisfy in practice.
+A SLAM sub-map needs at least **250 frame IDs in common** with the COLMAP reference to be considered (5 seconds at the EndoMapper 50 fps). Below that a map is too short to be metrically meaningful, and the threshold also prevents multi-map systems from gaming ATE with many tiny cherry-picked fragments. Sub-maps are evaluated as disjoint sets of frames: a frame already claimed by an earlier map is excluded from later ones, and the threshold applies to the frames a map exclusively owns. RPE at δ=40 additionally requires at least one common-ID pair separated by 40 frames — which any sub-map clearing the 250-frame threshold will satisfy in practice.
 
 ### Final score and ranking
 

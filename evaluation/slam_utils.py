@@ -371,7 +371,12 @@ def read_slam_trajectory(traj_file, initial_id=0):
             if not line or line.startswith("#"):
                 continue
 
-            tokens = line.split(",")
+            # Strip each field: "0.0, 000001.png, ..." is as valid as
+            # "0.0,000001.png,...". Without this the numeric-prefix scan below
+            # stops on the leading space, the frame id comes out None, and the
+            # whole evaluation dies. validate_output.py has always stripped, so
+            # a spaced file used to pass validation and then fail scoring.
+            tokens = [t.strip() for t in line.split(",")]
             if len(tokens) < 9:
                 # malformed line
                 continue

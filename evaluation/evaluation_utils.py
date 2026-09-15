@@ -635,6 +635,17 @@ def match_and_align_sequences(ref_seqs, slam_seqs, ref_type, slam_type, verbose:
                 if results_map:
                     results_exp[slam_exp_name] = get_pondered_maps_result(results_map)
 
+            if not results_exp:
+                # Every run of this sequence was discarded (no sub-map cleared the
+                # >=MIN_COMMON_FRAMES rule -- e.g. NaN poses leave a single valid
+                # frame). Count it as a failed clip, exactly like a sequence with
+                # no matching maps above, instead of crashing on the mean of an
+                # empty list inside get_mean_seq_result (sub 9780041, 9 Sep 2026).
+                all_results[seq_name] = None
+                all_results_mean[seq_name] = None
+                print("No valid map in any run for sequence:", seq_name)
+                continue
+
             plot_seq_results(seq_name, results_exp)
             results_mean = get_mean_seq_result(results_exp, dict_seq_traj_lengths, seq_name,
                                                num_slam_exp, num_existing_exp)
